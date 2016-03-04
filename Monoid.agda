@@ -1,4 +1,6 @@
 open import Relation.Binary.PropositionalEquality
+open import Function using (_∘_; _$_)
+
 open import Level
 
 record Monoid {n} : Set (suc n) where
@@ -60,5 +62,63 @@ record MonoidHom (M M' : Monoid) : Set where
   field
     f : A → A'
     respect-mempty : f mempty ≡ mempty'
-    respect-<>     : (x y : A)
+    respect-<>     : {x y : A}
                    → f (x <> y) ≡ (f x) <>' (f y)
+
+forget : Monoid → Set
+forget = Monoid.A
+
+free : Set → Monoid
+free A = record
+  { A = List A
+  ; mempty = nil
+  ; _<>_ = _++_
+  ; left-id-mempty  = left-id-nil
+  ; right-id-mempty = right-id-nil
+  ; assoc-<> = assoc-++
+  }
+                   
+record _⊣_ (F : Set → Monoid) (G : Monoid → Set) : Set₁ where
+  field
+    toSet : {A : Set}
+          → {M : Monoid}
+          → MonoidHom (F A) M
+          → (A → G M)
+    toMonoid : {A : Set}
+             → {M : Monoid}
+             → (A → G M)
+             → MonoidHom (F A) M
+
+    -- and probably something to prove that toSet and toMonoid are
+    -- inverses of each other?
+    -- yeah, I'm looking into this
+
+foldr : {A B : Set} → (A → B → B) → B → List A → B
+foldr f b nil = b
+foldr f b (x ∷ xs) = f x (foldr f b xs)
+
+fold-map : {A : Set} → (M : Monoid) → (A → forget M) → List A → (forget M)
+fold-map M f = foldr (λ x r → (Monoid._<>_ M) (f x) r) (Monoid.mempty M)
+
+free⊣forget-toSet : {A : Set} {M : Monoid}
+                  → MonoidHom (free A) M → (A → forget M)
+free⊣forget-toSet φ = λ a → MonoidHom.f φ (a ∷ nil)
+
+free⊣forget-toMonoid : {A : Set} {M : Monoid}
+                     → (A → forget M) → MonoidHom (free A) M
+free⊣forget-toMonoid {_} {M} g = record
+  { f = f
+  ; respect-mempty = refl
+  ; respect-<> = {!!}
+  }
+  where
+    f = fold-map M g
+    
+    respect-<> : {A : Set} {xs ys : List A} → f (xs ++ ys) ≡ (f xs) (Monoid._<>_ M) (f ys)
+    respect-<> x y = ?
+                     
+free⊣forget : free ⊣ forget
+free⊣forget = record
+  { toSet = free⊣forget-toSet
+  ; toMonoid = free⊣forget-toMonoid
+  }
