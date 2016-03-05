@@ -1,41 +1,72 @@
 module FreeMonoid where
 
 open import Monoid
+open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
+import Relation.Binary.SetoidReasoning as ≈-Reasoning
 
 
-data ExpMonoid (A : Set) : Set where
-  Embed : A → ExpMonoid A
-  MEmpty : ExpMonoid A
-  _<>_ : ExpMonoid A → ExpMonoid A → ExpMonoid A
+module Carrier (A : Set) where
 
-data EquivMonoid {A : Set} : ExpMonoid A → ExpMonoid A → Set where
-  equiv-refl : {e : ExpMonoid A}
-             → EquivMonoid e e
-  equiv-sym : {e₁ e₂ : ExpMonoid A}
-            → EquivMonoid e₁ e₂ → EquivMonoid e₂ e₁
-  equiv-trans : {e₁ e₂ e₃ : ExpMonoid A}
-              → EquivMonoid e₁ e₂
-              → EquivMonoid e₂ e₃
-              → EquivMonoid e₁ e₃
-  left-id-mempty : {e : ExpMonoid A}
-                 → EquivMonoid (MEmpty <> e) e
-  right-id-mempty : {e : ExpMonoid A}
-                  → EquivMonoid (e <> MEmpty) e
-  assoc-mappend : {e₁ e₂ e₃ : ExpMonoid A}
-                → EquivMonoid ((e₁ <> e₂) <> e₃) (e₁ <> (e₂ <> e₃))
+  data ExpMonoid : Set where
+    Embed : A → ExpMonoid
+    MEmpty : ExpMonoid
+    _<>_ : ExpMonoid → ExpMonoid → ExpMonoid
 
-eqClass : {A : Set} → ExpMonoid A → List A
-eqClass = {!!}
 
-sound : {A : Set}
-      → {e₁ e₂ : ExpMonoid A}
-      → eqClass e₁ ≡ eqClass e₂
-      → EquivMonoid e₁ e₂
-sound = {!!}
+  data EquivMonoid : ExpMonoid → ExpMonoid → Set where
+    equiv-refl : {e : ExpMonoid}
+               → EquivMonoid e e
+    equiv-sym : {e₁ e₂ : ExpMonoid}
+              → EquivMonoid e₁ e₂ → EquivMonoid e₂ e₁
+    equiv-trans : {e₁ e₂ e₃ : ExpMonoid}
+                → EquivMonoid e₁ e₂
+                → EquivMonoid e₂ e₃
+                → EquivMonoid e₁ e₃
+    equiv-cong : {e₁ e₂ e₁′ e₂′ : ExpMonoid}
+               → EquivMonoid e₁ e₁′
+               → EquivMonoid e₂ e₂′
+               → EquivMonoid (e₁ <> e₂) (e₁′ <> e₂′)
+    left-id-mempty : {e : ExpMonoid}
+                   → EquivMonoid (MEmpty <> e) e
+    right-id-mempty : {e : ExpMonoid}
+                    → EquivMonoid (e <> MEmpty) e
+    assoc-mappend : (e₁ e₂ e₃ : ExpMonoid)
+                  → EquivMonoid ((e₁ <> e₂) <> e₃) (e₁ <> (e₂ <> e₃))
 
-complete : {A : Set}
-         → {e₁ e₂ : ExpMonoid A}
-         → EquivMonoid e₁ e₂
-         → eqClass e₁ ≡ eqClass e₂
-complete = {!!}
+  equiv-setoid : Setoid _ _
+  equiv-setoid = record
+    { Carrier = ExpMonoid
+    ; _≈_ = EquivMonoid
+    ; isEquivalence = record
+      { refl  = equiv-refl
+      ; sym   = equiv-sym
+      ; trans = equiv-trans
+      }
+    }
+
+
+  eqClass : ExpMonoid → List A
+  eqClass = {!!}
+
+
+  module Sound where
+    open ≈-Reasoning
+
+    sound : {e₁ e₂ : ExpMonoid}
+          → eqClass e₁ ≡ eqClass e₂
+          → EquivMonoid e₁ e₂
+    sound {e₁} {e₂} prf =
+      begin⟨ equiv-setoid ⟩
+        e₁
+      ≈⟨ {!!} ⟩
+        e₂
+      ∎
+
+  module Complete where
+    open ≡-Reasoning
+
+    complete : {e₁ e₂ : ExpMonoid}
+             → EquivMonoid e₁ e₂
+             → eqClass e₁ ≡ eqClass e₂
+    complete = {!!}
