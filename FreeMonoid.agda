@@ -7,35 +7,35 @@ open import Relation.Binary.PropositionalEquality
 data ExpMonoid (A : Set) : Set where
   Embed : A → ExpMonoid A
   MEmpty : ExpMonoid A
-  MAppend : ExpMonoid A → ExpMonoid A → ExpMonoid A
+  _<>_ : ExpMonoid A → ExpMonoid A → ExpMonoid A
 
 data EquivMonoid {A : Set} : ExpMonoid A → ExpMonoid A → Set where
   equiv-refl : {e : ExpMonoid A}
              → EquivMonoid e e
-  equiv-sym : {e1 e2 : ExpMonoid A}
-            → EquivMonoid e1 e2 → EquivMonoid e2 e1
-  equiv-trans : {e1 e2 e3 : ExpMonoid A}
-              → EquivMonoid e1 e2
-              → EquivMonoid e2 e3
-              → EquivMonoid e1 e3
+  equiv-sym : {e₁ e₂ : ExpMonoid A}
+            → EquivMonoid e₁ e₂ → EquivMonoid e₂ e₁
+  equiv-trans : {e₁ e₂ e₃ : ExpMonoid A}
+              → EquivMonoid e₁ e₂
+              → EquivMonoid e₂ e₃
+              → EquivMonoid e₁ e₃
   left-id-mempty : {e : ExpMonoid A}
-                 → EquivMonoid (MAppend MEmpty e) e
+                 → EquivMonoid (MEmpty <> e) e
   right-id-mempty : {e : ExpMonoid A}
-                  → EquivMonoid (MAppend e MEmpty) e
-  assoc-mappend : {e1 e2 e3 : ExpMonoid A}
-                → EquivMonoid (MAppend (MAppend e1 e2) e3) (MAppend e1 (MAppend e2 e3))
+                  → EquivMonoid (e <> MEmpty) e
+  assoc-mappend : {e₁ e₂ e₃ : ExpMonoid A}
+                → EquivMonoid ((e₁ <> e₂) <> e₃) (e₁ <> (e₂ <> e₃))
 
 eqClass : {A : Set} → ExpMonoid A → List A
 eqClass = {!!}
 
 sound : {A : Set}
-      → {e1 e2 : ExpMonoid A}
-      → eqClass e1 ≡ eqClass e2
-      → EquivMonoid e1 e2
+      → {e₁ e₂ : ExpMonoid A}
+      → eqClass e₁ ≡ eqClass e₂
+      → EquivMonoid e₁ e₂
 sound = {!!}
 
 complete : {A : Set}
-         → {e1 e2 : ExpMonoid A}
-         → EquivMonoid e1 e2
-         → eqClass e1 ≡ eqClass e2
+         → {e₁ e₂ : ExpMonoid A}
+         → EquivMonoid e₁ e₂
+         → eqClass e₁ ≡ eqClass e₂
 complete = {!!}
