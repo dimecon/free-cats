@@ -69,6 +69,9 @@ module Carrier {ℓ} (A : Set ℓ)  where
       ≈⟨ equiv-trans (equiv-cong equiv-refl resp-++) (assoc-mappend (Embed x) (list→mon xs) (list→mon ys)) ⟩
     ((Embed x <> list→mon xs) <> list→mon ys) ∎
 
+  resp-[] : EquivMonoid (list→mon []) MEmpty
+  resp-[] = equiv-refl
+
   list→mon-inv : ∀ {e} → EquivMonoid (list→mon (mon→list e)) e
   list→mon-inv {Embed x} = right-id-mempty
   list→mon-inv {MEmpty} = equiv-refl
@@ -84,72 +87,17 @@ module Carrier {ℓ} (A : Set ℓ)  where
   resp-≡ {x ∷ xs} {.x ∷ .xs} refl = equiv-refl
 
   module Sound where
-    --open ≈-Reasoning
 
     sound : {e e' : ExpMonoid}
           → mon→list e ≡ mon→list e'
           → EquivMonoid e e'
-    sound {MEmpty} {MEmpty} _ = equiv-refl
-    sound {MEmpty} {Embed x} ()
-    sound {MEmpty} {e <> e'} prf = begin⟨ equiv-setoid ⟩
-      MEmpty
-        ≈⟨ equiv-refl ⟩
-      list→mon []
-        ≈⟨ resp-≡ prf ⟩
-      list→mon (mon→list e ++ mon→list e')
-        ≈⟨ resp-++ ⟩
-      list→mon (mon→list e) <> list→mon (mon→list e')
-        ≈⟨ equiv-cong list→mon-inv list→mon-inv ⟩
-      (e <> e') ∎
-    sound {e <> e'} {Embed x} prf = begin⟨ equiv-setoid ⟩
-      (e <> e')
-        ≈⟨ equiv-cong (equiv-sym list→mon-inv) (equiv-sym list→mon-inv) ⟩
-      (list→mon (mon→list e) <> list→mon (mon→list e'))
-        ≈⟨ equiv-sym resp-++ ⟩
-      list→mon (mon→list e ++ mon→list e')
-        ≈⟨ resp-≡ prf ⟩
-      list→mon (x ∷ [])
-        ≈⟨ equiv-refl ⟩
-      ((Embed x) <> MEmpty)
-        ≈⟨ right-id-mempty ⟩
-      Embed x ∎
-    sound {e₁ <> e₂} {e₁' <> e₂'} prf = begin⟨ equiv-setoid ⟩
-      (e₁ <> e₂)
-        ≈⟨ equiv-sym list→mon-inv ⟩
-      list→mon (mon→list (e₁ <> e₂))
-        ≈⟨ resp-≡ refl ⟩
-      list→mon (mon→list e₁ ++ mon→list e₂)
-        ≈⟨ resp-≡ prf ⟩
-      list→mon (mon→list e₁' ++ mon→list e₂')
-        ≈⟨ resp-++ ⟩
-      (list→mon (mon→list e₁') <> list→mon (mon→list e₂'))
-        ≈⟨ equiv-cong list→mon-inv list→mon-inv ⟩
-      (e₁' <> e₂') ∎
-    sound {e <> e'} {MEmpty} prf = begin⟨ equiv-setoid ⟩
-      (e <> e')
-        ≈⟨ equiv-cong (equiv-sym list→mon-inv) (equiv-sym list→mon-inv) ⟩
-      list→mon (mon→list e) <> list→mon (mon→list e')
-        ≈⟨ equiv-sym resp-++ ⟩
-      list→mon (mon→list e ++ mon→list e')
-        ≈⟨ resp-≡ prf ⟩
-      list→mon []
-        ≈⟨ equiv-refl ⟩
-      MEmpty ∎
-    sound {Embed x} {Embed .x} refl = equiv-refl
-    sound {Embed x} {MEmpty} ()
-    sound {Embed x} {e <> e'} prf = begin⟨ equiv-setoid ⟩
-      Embed x
-        ≈⟨ equiv-sym right-id-mempty ⟩
-      list→mon (x ∷ [])
-        ≈⟨ resp-≡ prf ⟩
-      list→mon (mon→list e ++ mon→list e')
-        ≈⟨ resp-++ ⟩
-      (list→mon (mon→list e) <> list→mon (mon→list e'))
-        ≈⟨ equiv-cong list→mon-inv list→mon-inv ⟩
-      (e <> e') ∎
+    sound {e} {e'} p = begin⟨ equiv-setoid ⟩
+      e                        ≈⟨ equiv-sym list→mon-inv ⟩
+      list→mon (mon→list e)  ≈⟨ resp-≡ p ⟩
+      list→mon (mon→list e') ≈⟨ list→mon-inv ⟩
+      e' ∎
 
   module Complete where
-    --open ≡-Reasoning
 
     complete : {e₁ e₂ : ExpMonoid}
              → EquivMonoid e₁ e₂
