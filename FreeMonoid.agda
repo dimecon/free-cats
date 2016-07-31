@@ -4,7 +4,11 @@ open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 import Relation.Binary.SetoidReasoning as ≈-Reasoning
 
+open import Level
+
 open import List
+
+open import FreeCategory
 
 module Carrier {ℓ} (A : Set ℓ)  where
 
@@ -109,3 +113,9 @@ module Carrier {ℓ} (A : Set ℓ)  where
     complete left-id-mempty = refl
     complete (right-id-mempty {e}) = right-id-[] (mon→list e)
     complete (assoc-mappend e₁ e₂ e₃) = assoc-++ (mon→list e₁) (mon→list e₂) (mon→list e₃)
+
+module Category {ℓ} {A : Set ℓ} where
+  C : A → A → Set ℓ
+  C _ _ = A
+
+  open Composition _ C

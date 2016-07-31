@@ -4,7 +4,7 @@ open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 import Relation.Binary.SetoidReasoning as ≈-Reasoning
 
-module Carrier {ℓ} (A : Set ℓ) (C : A → A → Set ℓ) where
+module Composition {ℓ} (A : Set ℓ) (C : A → A → Set ℓ) where
 
   data ExpCategory : A → A → Set ℓ where
     Embed : ∀ {a a′}
@@ -91,25 +91,15 @@ module Carrier {ℓ} (A : Set ℓ) (C : A → A → Set ℓ) where
   free→exp nil = Id
   free→exp (x ∷ xs) = Embed x <> free→exp xs
 
-  resp-<> : ∀ {a a′ a′′} {e : ExpCategory a a′} {e′ : ExpCategory a′ a′′}
-         → exp→free (e <> e′) ≡ exp→free e ++ exp→free e′
-  resp-<> = refl
-
   resp-++ : ∀ {a a′ a′′} {xs : FreeCategory a a′} {ys : FreeCategory a′ a′′}
           → EquivCategory (free→exp (xs ++ ys)) (free→exp xs <> free→exp ys)
-  resp-++ {xs = nil} {ys} =  begin⟨ equiv-setoid ⟩
-    free→exp ys
-      ≈⟨ equiv-sym left-id-id ⟩
-    (Id <> free→exp ys) ∎
+  resp-++ {xs = nil} {ys} =  equiv-sym left-id-id
   resp-++ {xs = x ∷ xs} {ys} = begin⟨ equiv-setoid ⟩
     (Embed x <> free→exp (xs ++ ys))
       ≈⟨ equiv-cong equiv-refl resp-++ ⟩
     Embed x <> (free→exp xs <> free→exp ys)
       ≈⟨ equiv-sym (assoc-<> (Embed x) (free→exp xs) (free→exp ys)) ⟩
     ((Embed x <> free→exp xs) <> free→exp ys) ∎
-
-  resp-nil : ∀ {a} → EquivCategory {a} (free→exp nil) Id
-  resp-nil = equiv-refl
 
   free→exp-inv : ∀ {a a′} {e : ExpCategory a a′} → EquivCategory (free→exp (exp→free e)) e
   free→exp-inv {e = Embed x} = right-id-id
