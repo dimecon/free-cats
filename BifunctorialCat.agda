@@ -17,7 +17,7 @@ module Bifunctor {ℓ} (A : Set ℓ) (C : Ty A → Ty A → Set ℓ) where
     embed : ∀ {a a′}
          → C a a′
          → Exp a a′
-    id    : ∀ a
+    id    : ∀ {a}
          → Exp a a
     _<>_   : ∀ {a a′ a′′}
           → Exp a a′ → Exp a′ a′′ → Exp a a′′
@@ -35,13 +35,13 @@ module Bifunctor {ℓ} (A : Set ℓ) (C : Ty A → Ty A → Set ℓ) where
                → EquivExp f  f′ → EquivExp g  g′
                → EquivExp (f <> g) (f′ <> g′)
     left-id-id : ∀ {a a′} {e : Exp a a′}
-              → EquivExp (id a <> e) e
+              → EquivExp (id <> e) e
     right-id-id : ∀ {a a′} {e : Exp a a′}
-               → EquivExp (e <> id a′) e
+               → EquivExp (e <> id) e
     assoc-<> : ∀ {a a′ a′′ a′′′} (e : Exp a a′) (e′ : Exp a′ a′′) (e′′ : Exp a′′ a′′′)
             → EquivExp ((e <> e′) <> e′′) (e <> (e′ <> e′′))
     compat-⊩id : ∀ {a b}
-              → EquivExp (id a ∥ id b) (id (a , b))
+              → EquivExp (id {a} ∥ id {b}) (id {a , b})
     compat-∥-<> : ∀ {a b c} {a′ b′ c′}
               → (f : Exp a b) → (g : Exp b c)
               → (h : Exp a′ b′) → (i : Exp b′ c′)
@@ -72,6 +72,14 @@ module Bifunctor {ℓ} (A : Set ℓ) (C : Ty A → Ty A → Set ℓ) where
   module _ where
     open ≈-Reasoning
 
+    nil : ∀ {a} → FreeBiCat a a
+    nil {atom _} = nil-atom
+    nil {_ , _} = nil-pair nil nil
+
+    _∷_ : ∀ {a a′ a′′} → C a a′ → FreeBiCat a′ a′′ → FreeBiCat a a′′
+    _∷_ {atom m} x xs = cons-atom x xs
+    _∷_ {a₁ , a₂} x xs = cons-pair nil nil x xs
+
     _++_ : ∀ {a a′ a′′} → FreeBiCat a a′ → FreeBiCat a′ a′′ → FreeBiCat a a′′
     nil-atom ++ y = y
     nil-pair f g ++ nil-pair h i = nil-pair (f ++ h) (g ++ i)
@@ -79,13 +87,17 @@ module Bifunctor {ℓ} (A : Set ℓ) (C : Ty A → Ty A → Set ℓ) where
     cons-atom f g ++ h = cons-atom f (g ++ h)
     cons-pair f g h i ++ j = cons-pair f g h (i ++ j)
 
-    left-id-nil-pair : ∀ {a b c} (f : FreeBiCat a a) (g : FreeBiCat b b) (h : FreeBiCat (a , b) c ) → (nil-pair f g ++ h) ≡ h
-    left-id-nil-pair f g h = {!f!}
+    left-id-nil : ∀ {a a′} {f : FreeBiCat a a′} → nil ++ f ≡ f
+    left-id-nil {f = nil-atom} = refl
+    left-id-nil {f = nil-pair f g} = cong₂ nil-pair left-id-nil left-id-nil
+    left-id-nil {f = cons-atom u f} = refl
+    left-id-nil {f = cons-pair f g u h} = cong₂ (λ p q → cons-pair p q u h) left-id-nil left-id-nil
 
-    right-id-nil-atom : ∀ {a a′} (f : FreeBiCat a (atom a′)) → f ++ nil-atom ≡ f
-    right-id-nil-atom nil-atom = refl
-    right-id-nil-atom (cons-atom u f) = cong (λ x → cons-atom u x) (right-id-nil-atom f)
-    right-id-nil-atom (cons-pair f g u h) = cong (λ x → cons-pair f g u x) (right-id-nil-atom h)
+    right-id-nil : ∀ {a a′} {f : FreeBiCat a a′} → f ++ nil ≡ f
+    right-id-nil {f = nil-atom} = refl
+    right-id-nil {f = nil-pair f g} = cong₂ nil-pair right-id-nil right-id-nil
+    right-id-nil {f = cons-atom u f} = cong (cons-atom u) right-id-nil
+    right-id-nil {f = cons-pair f g u h} = cong (cons-pair f g u) right-id-nil
 
     assoc-++ : ∀ {a a′ a′′ a′′′} (f : FreeBiCat a a′) (g : FreeBiCat a′ a′′) (h : FreeBiCat a′′ a′′′)
             → (f ++ g) ++ h ≡ f ++ (g ++ h)
@@ -99,23 +111,31 @@ module Bifunctor {ℓ} (A : Set ℓ) (C : Ty A → Ty A → Set ℓ) where
     assoc-++ (cons-pair f g u h) i j = cong (λ p → cons-pair f g u p) (assoc-++ h i j)
 
     exp→free : ∀ {a a′} → Exp a a′ → FreeBiCat a a′
-    exp→free {atom _} {atom _ } (embed f) = cons-atom f nil-atom
-    exp→free {atom _} {a , b  } (embed f) = cons-atom f (nil-pair (exp→free (id a)) (exp→free (id b)))
-    exp→free {a , b } {atom _ } (embed f) = cons-pair (exp→free (id a)) (exp→free (id b)) f nil-atom
-    exp→free {a , b } {a′ , b′ } (embed f) = cons-pair (exp→free (id a)) (exp→free (id b)) f (nil-pair (exp→free (id a′)) (exp→free (id b′)))
-    exp→free (id {atom _}) = nil-atom
-    exp→free (id {a , b}) = nil-pair (exp→free (id a)) (exp→free (id b))
-    exp→free {a} {a′} (_<>_ {a′ = b} f g) = exp→free {a} {b} f ++ exp→free {b} {a′} g
+    exp→free (embed f) = f ∷ nil
+    exp→free id = nil
+    exp→free (f <> g) = exp→free f ++ exp→free g
     exp→free (f ∥ g) = nil-pair (exp→free f) (exp→free g)
 
-    resp-<> : ∀ {a b c} {f : Exp a b} {g : Exp b c} → exp→free (f <> g) ≡ exp→free f ++ exp→free g
-    resp-<> = {!!}
-
     free→exp : ∀ {a a′} → FreeBiCat a a′ → Exp a a′
-    free→exp nil-atom = id _
+    free→exp nil-atom = id
     free→exp (nil-pair f g) = free→exp f ∥ free→exp g
     free→exp (cons-atom u f) = embed u <> free→exp f
     free→exp (cons-pair f g u h) = (free→exp f ∥ free→exp g) <> (embed u <> free→exp h)
+
+    resp-nil : ∀ {a} → EquivExp (free→exp (nil {a})) id
+    resp-nil {atom _} = equiv-refl
+    resp-nil {a , b} = begin⟨ equiv-setoid ⟩
+      (free→exp nil ∥ free→exp nil) ≈⟨ cong-∥ resp-nil resp-nil ⟩
+      (id ∥ id) ≈⟨ compat-⊩id ⟩
+      id ∎
+
+    resp-∷ : ∀ {a a′ a′′} {x : C a a′} {xs : FreeBiCat a′ a′′} →  EquivExp (free→exp (x ∷ xs)) (embed x <> free→exp xs)
+    resp-∷ {atom m} = equiv-refl
+    resp-∷ {a , b} {x = x} {xs = xs} = begin⟨ equiv-setoid ⟩
+      (free→exp nil ∥ free→exp nil) <> (embed x <> free→exp xs) ≈⟨ cong-<> (cong-∥ resp-nil resp-nil) equiv-refl ⟩
+      (id ∥ id) <> (embed x <> free→exp xs) ≈⟨ cong-<> compat-⊩id equiv-refl ⟩
+      id <> (embed x <> free→exp xs) ≈⟨ left-id-id ⟩
+      embed x <> free→exp xs ∎
 
     resp-++ : ∀ {a a′ a′′} (f : FreeBiCat a a′) (g : FreeBiCat a′ a′′)
            → EquivExp (free→exp (f ++ g)) (free→exp f <> free→exp g)
@@ -152,76 +172,45 @@ module Bifunctor {ℓ} (A : Set ℓ) (C : Ty A → Ty A → Set ℓ) where
       ((free→exp f ∥ free→exp h) <> (embed u <> free→exp i)) <> free→exp g ∎
 
     free→exp-exp→free : ∀ {a a′} (e : Exp a a′) → EquivExp (free→exp (exp→free e)) e
-    free→exp-exp→free {atom m} {atom k} (embed u) = right-id-id
-    free→exp-exp→free {atom m} {a , b} (embed u) = {!free→exp (exp→free (id a)) ∥ free→exp (exp→free (id b))!}
-    free→exp-exp→free {a , b} {atom m} (embed u) = {!!}
-    free→exp-exp→free {a , b} {a′ , b′} (embed u) = {!!}
-    free→exp-exp→free (id a) = {!!}
-    -- Why do I need to specify the implicit cases {atom x} {atom k} and {atom x} {a , b} if the proofs are the same?
-    -- Doing {atom x} {_} or {atom x} or {atom x} {a′} doesn't work
-    free→exp-exp→free {atom x} {atom y} (f <> g) = begin⟨ equiv-setoid ⟩
-      free→exp (exp→free f ++ exp→free g) ≈⟨ resp-++ (exp→free f) (exp→free g) ⟩
-      (free→exp (exp→free f) <> free→exp (exp→free g)) ≈⟨ cong-<> (free→exp-exp→free f) (free→exp-exp→free g) ⟩
-      (f <> g) ∎
-    free→exp-exp→free {atom x} {a , b} (f <> g) = begin⟨ equiv-setoid ⟩
-      free→exp (exp→free f ++ exp→free g) ≈⟨ resp-++ (exp→free f) (exp→free g) ⟩
-      (free→exp (exp→free f) <> free→exp (exp→free g)) ≈⟨ cong-<> (free→exp-exp→free f) (free→exp-exp→free g) ⟩
-      (f <> g) ∎
-    free→exp-exp→free {a , b} {atom x} (f <> g) = begin⟨ equiv-setoid ⟩
-      free→exp (exp→free f ++ exp→free g) ≈⟨ resp-++ (exp→free f) (exp→free g) ⟩
-      (free→exp (exp→free f) <> free→exp (exp→free g)) ≈⟨ cong-<> (free→exp-exp→free f) (free→exp-exp→free g) ⟩
-      (f <> g) ∎
-    free→exp-exp→free {a , b} {a′ , b′} (f <> g) = begin⟨ equiv-setoid ⟩
+    free→exp-exp→free (embed u) = begin⟨ equiv-setoid ⟩
+      free→exp (u ∷ nil) ≈⟨ resp-∷ ⟩
+      embed u <> free→exp nil ≈⟨ cong-<> equiv-refl resp-nil ⟩
+      embed u <> id ≈⟨ right-id-id ⟩
+      embed u ∎
+    free→exp-exp→free id = resp-nil
+    free→exp-exp→free (f <> g) = begin⟨ equiv-setoid ⟩
       free→exp (exp→free f ++ exp→free g) ≈⟨ resp-++ (exp→free f) (exp→free g) ⟩
       (free→exp (exp→free f) <> free→exp (exp→free g)) ≈⟨ cong-<> (free→exp-exp→free f) (free→exp-exp→free g) ⟩
       (f <> g) ∎
     free→exp-exp→free (f ∥ g) = cong-∥ (free→exp-exp→free f) (free→exp-exp→free g)
 
+  resp-≡ : ∀ {a a′} {f g : FreeBiCat a a′} → f ≡ g → EquivExp (free→exp f) (free→exp g)
+  resp-≡ refl = equiv-refl
+
   module Sound where
+    open ≈-Reasoning
+
     sound : ∀ {a a′} {e e′ : Exp a a′}
          → exp→free e ≡ exp→free e′
          → EquivExp e e′
-    sound = {!!}
-    --sound {e = e} {e′ = e′} p = begin⟨ equiv-setoid ⟩
-    --  e                        ≈⟨ equiv-sym free→exp-inv ⟩
-    --  free→exp (exp→free e)  ≈⟨ resp-≡ p ⟩
-    --  free→exp (exp→free e′) ≈⟨ free→exp-inv ⟩
-    --  e′ ∎
+    sound {e = e} {e′ = e′} p = begin⟨ equiv-setoid ⟩
+      e ≈⟨ equiv-sym (free→exp-exp→free e) ⟩
+      free→exp (exp→free e) ≈⟨ resp-≡ p ⟩
+      free→exp (exp→free e′) ≈⟨ free→exp-exp→free e′ ⟩
+      e′ ∎
 
   module Complete where
     open ≡-Reasoning
 
-    complete : ∀ {a a′}
-            → {e₁ e₂ : Exp a a′}
-            → EquivExp e₁ e₂
-            → exp→free e₁ ≡ exp→free e₂
+    complete : ∀ {a a′} {e₁ e₂ : Exp a a′}
+            → EquivExp e₁ e₂ → exp→free e₁ ≡ exp→free e₂
     complete equiv-refl = refl
     complete (equiv-sym x) = sym (complete x)
     complete (equiv-trans p q) = trans (complete p) (complete q)
-    complete {a} {a′} {e₁ = f <> g} {e₂ = f′ <> g′} (cong-<> {.a} {a′ = b} p q) = {!!}
---      cong₂ {A = FreeBiCat a b} {B = FreeBiCat b a′} {!!} (complete p) (complete q)
-    complete {atom m} {atom x} left-id-id = refl
-    complete {atom m} {a , b} left-id-id = refl
-    complete {atom x , atom y} {atom z} {e₂ = f} left-id-id with exp→free f
-    complete {atom x , atom y} {atom z} {e₂ = f} left-id-id | cons-pair _ _ _ _ = refl
-    complete {(a , b) , atom x} {atom m} {e₂ = f} left-id-id with exp→free f
-    --complete {(a , b) , atom x} {atom m} left-id-id | cons-pair f g u h = cong (λ x → cons-pair {!x!} g u h) (complete left-id-id)
-    complete {(a , b) , atom x} {atom m} left-id-id | cons-pair f g u h = {!!}
-    complete {a , (b , c)} {atom m} {e₂ = f} left-id-id with exp→free f
-    complete {a , (b , c)} {atom m} left-id-id | cons-pair _ _ _ _ = {!!}
-    complete {a , b} {a′ , b′} {e₂ = f} left-id-id with exp→free f
-    complete {a , b} {a′ , b′} left-id-id | nil-pair _ _ = {!!}
-    complete {a , b} {a′ , b′} left-id-id | cons-pair _ _ _ _ = {!!}
-    complete {a′ = atom x} {e₂ = f} right-id-id = begin
-      exp→free (f <> (id (atom x))) ≡⟨ {!resp-++!} ⟩
-      exp→free f ++ exp→free (id (atom x)) ≡⟨ {!!} ⟩
-      exp→free f ∎
-    complete {a′ = a′ , a′₁} right-id-id = {!!}
-    complete (assoc-<> f g h) = {!!}
+    complete (cong-<> p q) = cong₂ _++_ (complete p) (complete q)
+    complete left-id-id = left-id-nil
+    complete right-id-id = right-id-nil
+    complete (assoc-<> f g h) = assoc-++ (exp→free f) (exp→free g) (exp→free h)
     complete compat-⊩id = refl
-    complete (compat-∥-<> f g h i) = {!!}
-    complete (cong-∥ f g) = {!!}
-  --  complete (equiv-cong p₁ p₂) = cong₂ _++_ (complete p₁) (complete p₂)
-  --  complete left-id-id = refl
-  --  complete right-id-id = right-id-nil
-  --  complete (assoc-<> e₁ e₂ e₃) = assoc-++ (exp→free e₁) (exp→free e₂) (exp→free e₃)
+    complete (compat-∥-<> f g h i) = refl
+    complete (cong-∥ p q) = cong₂ nil-pair (complete p) (complete q)

@@ -112,8 +112,7 @@ module Composition {ℓ} (A : Set ℓ) (C : A → A → Set ℓ) where
     (e <> e′) ∎
 
   resp-≡ : ∀ {a a′} {xs ys : FreeCategory a a′} → xs ≡ ys → EquivCategory (free→exp xs) (free→exp ys)
-  resp-≡ {xs = nil} {.nil} refl = equiv-refl
-  resp-≡ {xs = x ∷ xs} {.x ∷ .xs} refl = equiv-refl
+  resp-≡ refl = equiv-refl
 
   module Sound where
     sound : ∀ {a a′} {e e′ : ExpCategory a a′}
